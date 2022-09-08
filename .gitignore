@@ -201,6 +201,11 @@ spark-warehouse/
 # For SBT
 .jvmopts
 
+# For Metals
+.bloop/
+.metals/
+.vscode/
+metals.sbt
 
 # End of https://www.gitignore.io/api/sbt,scala,spark,intellij
 
