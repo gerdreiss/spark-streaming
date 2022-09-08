@@ -4,13 +4,13 @@ version := "0.1"
 
 scalaVersion := "2.12.16"
 
-val sparkVersion              = "3.0.3"
+val sparkVersion              = "3.3.0"
 val postgresVersion           = "42.2.26"
 val cassandraConnectorVersion = "3.0.1" // preview version at the moment of writing (July 7, 2020)
 val akkaVersion               = "2.6.20"
 val akkaHttpVersion           = "10.2.10"
 val twitter4jVersion          = "4.0.7"
-val kafkaVersion              = "2.4.1"
+val kafkaVersion              = "2.8.1"
 val log4jVersion              = "2.18.0"
 val nlpLibVersion             = "3.5.1"
 
@@ -32,7 +32,7 @@ libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-streaming" % sparkVersion,
 
   // streaming-kafka
-  "org.apache.spark" % "spark-sql-kafka-0-10_2.12" % sparkVersion,
+  "org.apache.spark" %% "spark-sql-kafka-0-10" % sparkVersion,
 
   // low-level integrations
   "org.apache.spark" %% "spark-streaming-kafka-0-10" % sparkVersion,
