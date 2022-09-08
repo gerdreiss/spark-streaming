@@ -2,16 +2,16 @@ name := "spark-streaming"
 
 version := "0.1"
 
-scalaVersion := "2.12.10"
+scalaVersion := "2.12.16"
 
-val sparkVersion = "3.0.2"
-val postgresVersion = "42.2.2"
+val sparkVersion = "3.0.3"
+val postgresVersion = "42.2.26"
 val cassandraConnectorVersion = "3.0.0" // preview version at the moment of writing (July 7, 2020)
-val akkaVersion = "2.5.24"
+val akkaVersion = "2.5.32"
 val akkaHttpVersion = "10.1.15"
 val twitter4jVersion = "4.0.7"
-val kafkaVersion = "2.4.0"
-val log4jVersion = "2.4.1"
+val kafkaVersion = "2.4.1"
+val log4jVersion = "2.18.0"
 val nlpLibVersion = "3.5.1"
 
 resolvers ++= Seq(
