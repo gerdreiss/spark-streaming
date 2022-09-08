@@ -1,6 +1,7 @@
 package part2structuredstreaming
 
 import common._
+import common.ExtensionMethods._
 import org.apache.spark.sql.{ DataFrame, SparkSession }
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.streaming.Trigger
@@ -26,7 +27,7 @@ object StreamingDataFrames {
     val shortLines: DataFrame = lines.filter(length(col("value")) <= 5)
 
     // tell between a static vs a streaming DF
-    println(s"Are we streaming? ${if (shortLines.isStreaming) "yes" else "no"}")
+    println(s"Are we streaming? ${shortLines.isStreaming.toYesNo}")
 
     // consuming a DF
     val query = shortLines.writeStream
