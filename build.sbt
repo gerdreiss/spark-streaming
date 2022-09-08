@@ -4,7 +4,7 @@ version := "0.1"
 
 scalaVersion := "2.12.16"
 
-val sparkVersion = "3.0.2"
+val sparkVersion = "3.0.3"
 val postgresVersion = "42.2.26"
 val cassandraConnectorVersion = "3.0.0" // preview version at the moment of writing (July 7, 2020)
 val akkaVersion = "2.5.24"
