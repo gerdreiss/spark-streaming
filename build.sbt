@@ -11,7 +11,7 @@ val akkaVersion = "2.5.24"
 val akkaHttpVersion = "10.1.7"
 val twitter4jVersion = "4.0.7"
 val kafkaVersion = "2.4.0"
-val log4jVersion = "2.4.1"
+val log4jVersion = "2.18.0"
 val nlpLibVersion = "3.5.1"
 
 resolvers ++= Seq(
