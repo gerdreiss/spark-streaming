@@ -10,7 +10,7 @@ val cassandraConnectorVersion = "3.0.0" // preview version at the moment of writ
 val akkaVersion = "2.5.24"
 val akkaHttpVersion = "10.1.7"
 val twitter4jVersion = "4.0.7"
-val kafkaVersion = "2.4.0"
+val kafkaVersion = "2.4.1"
 val log4jVersion = "2.4.1"
 val nlpLibVersion = "3.5.1"
 
