@@ -1,12 +1,16 @@
 package part2structuredstreaming
 
-import org.apache.spark.sql.{DataFrame, Dataset, Encoders, SparkSession}
-import org.apache.spark.sql.functions._
 import common._
+import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.Dataset
+import org.apache.spark.sql.Encoders
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
 
 object StreamingDatasets {
 
-  val spark = SparkSession.builder()
+  val spark = SparkSession
+    .builder()
     .appName("Streaming Datasets")
     .master("local[2]")
     .getOrCreate()
@@ -22,10 +26,10 @@ object StreamingDatasets {
       .format("socket")
       .option("host", "localhost")
       .option("port", 12345)
-      .load() // DF with single string column "value"
+      .load()                                                // DF with single string column "value"
       .select(from_json(col("value"), carsSchema).as("car")) // composite column (struct)
-      .selectExpr("car.*") // DF with multiple columns
-      .as[Car] // encoder can be passed implicitly with spark.implicits
+      .selectExpr("car.*")                                   // DF with multiple columns
+      .as[Car]                                               // encoder can be passed implicitly with spark.implicits
   }
 
   def showCarNames() = {
@@ -53,42 +57,37 @@ object StreamingDatasets {
     * 3) Count the cars by origin
     */
 
-  def ex1() = {
-    val carsDS = readCars()
-    carsDS.filter(_.Horsepower.getOrElse(0L) > 140)
+  def ex1() =
+    readCars()
+      .filter(_.Horsepower.getOrElse(0L) > 140)
       .writeStream
       .format("console")
       .outputMode("append")
       .start()
       .awaitTermination()
-  }
 
-  def ex2() = {
-    val carsDS = readCars()
-
-    carsDS.select(avg(col("Horsepower")))
+  def ex2() =
+    readCars()
+      .select(avg(col("Horsepower")))
       .writeStream
       .format("console")
       .outputMode("complete")
       .start()
       .awaitTermination()
-  }
 
   def ex3() = {
     val carsDS = readCars()
 
-    val carCountByOrigin = carsDS.groupBy(col("Origin")).count() // option 1
-    val carCountByOriginAlt = carsDS.groupByKey(car => car.Origin).count() // option 2 with the Dataset API
+    val carCountByOrigin    = carsDS.groupBy(col("Origin")).count() // option 1
+    val carCountByOriginAlt = carsDS.groupByKey(_.Origin).count()   // option 2 with the Dataset API
 
-    carCountByOriginAlt
-      .writeStream
+    carCountByOriginAlt.writeStream
       .format("console")
       .outputMode("complete")
       .start()
       .awaitTermination()
   }
 
-  def main(args: Array[String]): Unit = {
-    ex3()
-  }
+  def main(args: Array[String]): Unit = ex3()
+
 }

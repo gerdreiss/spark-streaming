@@ -5,7 +5,8 @@ import org.apache.spark.sql.functions._
 
 object StreamingJoins {
 
-  val spark = SparkSession.builder()
+  val spark = SparkSession
+    .builder()
     .appName("Streaming Joins")
     .master("local[2]")
     .getOrCreate()
@@ -13,19 +14,25 @@ object StreamingJoins {
   val guitarPlayers = spark.read
     .option("inferSchema", true)
     .json("src/main/resources/data/guitarPlayers")
+    .cache()
 
   val guitars = spark.read
     .option("inferSchema", true)
     .json("src/main/resources/data/guitars")
+    .cache()
 
   val bands = spark.read
     .option("inferSchema", true)
     .json("src/main/resources/data/bands")
+    .cache()
+
+  // schemas
+  val guitarPlayersSchema = guitarPlayers.schema
+  val bandsSchema         = bands.schema
 
   // joining static DFs
-  val joinCondition = guitarPlayers.col("band") === bands.col("id")
+  val joinCondition   = guitarPlayers.col("band") === bands.col("id")
   val guitaristsBands = guitarPlayers.join(bands, joinCondition, "inner")
-  val bandsSchema = bands.schema
 
   def joinStreamWithStatic() = {
     val streamedBandsDF = spark.readStream
@@ -37,7 +44,8 @@ object StreamingJoins {
       .selectExpr("band.id as id", "band.name as name", "band.hometown as hometown", "band.year as year")
 
     // join happens PER BATCH
-    val streamedBandsGuitaristsDF = streamedBandsDF.join(guitarPlayers, guitarPlayers.col("band") === streamedBandsDF.col("id"), "inner")
+    val halfStreamedJoinCondition = guitarPlayers.col("band") === streamedBandsDF.col("id")
+    val streamedBandsGuitaristsDF = streamedBandsDF.join(guitarPlayers, halfStreamedJoinCondition, "inner")
 
     /*
       restricted joins:
@@ -60,18 +68,29 @@ object StreamingJoins {
       .option("port", 12345)
       .load() // a DF with a single column "value" of type String
       .select(from_json(col("value"), bandsSchema).as("band"))
-      .selectExpr("band.id as id", "band.name as name", "band.hometown as hometown", "band.year as year")
+      .selectExpr(
+        "band.id as id",
+        "band.name as name",
+        "band.hometown as hometown",
+        "band.year as year",
+      )
 
     val streamedGuitaristsDF = spark.readStream
       .format("socket")
       .option("host", "localhost")
       .option("port", 12346)
       .load()
-      .select(from_json(col("value"), guitarPlayers.schema).as("guitarPlayer"))
-      .selectExpr("guitarPlayer.id as id", "guitarPlayer.name as name", "guitarPlayer.guitars as guitars", "guitarPlayer.band as band")
+      .select(from_json(col("value"), guitarPlayersSchema).as("guitarPlayer"))
+      .selectExpr(
+        "guitarPlayer.id as id",
+        "guitarPlayer.name as name",
+        "guitarPlayer.guitars as guitars",
+        "guitarPlayer.band as band",
+      )
 
     // join stream with stream
-    val streamedJoin = streamedBandsDF.join(streamedGuitaristsDF, streamedGuitaristsDF.col("band") === streamedBandsDF.col("id"))
+    val streamedJoinCondition        = streamedGuitaristsDF.col("band") === streamedBandsDF.col("id")
+    val streamedBandsAndGuitaristsDF = streamedBandsDF.join(streamedGuitaristsDF, streamedJoinCondition)
 
     /*
       - inner joins are supported
@@ -79,14 +98,14 @@ object StreamingJoins {
       - full outer joins are NOT supported
      */
 
-    streamedJoin.writeStream
+    streamedBandsAndGuitaristsDF.writeStream
       .format("console")
       .outputMode("append") // only append supported for stream vs stream join
       .start()
       .awaitTermination()
   }
 
-  def main(args: Array[String]): Unit = {
+  def main(args: Array[String]): Unit =
     joinStreamWithStream()
-  }
+
 }
