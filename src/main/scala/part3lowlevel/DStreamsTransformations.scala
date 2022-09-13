@@ -1,85 +1,102 @@
 package part3lowlevel
 
-import java.io.File
-
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.streaming.{Seconds, StreamingContext}
-import java.sql.Date
-import java.time.{LocalDate, Period}
-
 import common._
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.streaming.Seconds
+import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.dstream.DStream
+
+import java.io.File
+import java.sql.Date
+import java.time.LocalDate
+import java.time.Period
+import java.nio.file.Files
+import java.nio.file.Paths
 
 object DStreamsTransformations {
 
-  val spark = SparkSession.builder()
+  val spark = SparkSession
+    .builder()
     .appName("DStreams Transformations")
     .master("local[2]")
     .getOrCreate()
 
-  val ssc = new StreamingContext(spark.sparkContext, Seconds(1))
+  val ssc = new StreamingContext(spark.sparkContext, Seconds(5))
 
   import spark.implicits._ // for encoders to create Datasets
 
-  def readPeople() = ssc.socketTextStream("localhost", 9999).map { line =>
-    val tokens = line.split(":")
-    Person(
-      tokens(0).toInt, // id
-      tokens(1), // first name
-      tokens(2), // middle name
-      tokens(3), // last name
-      tokens(4), // gender
-      Date.valueOf(tokens(5)), // birth
-      tokens(6), // ssn/uuid
-      tokens(7).toInt // salary
-    )
-  }
+  def readPeople: DStream[Person] =
+    ssc
+      .textFileStream("src/main/resources/data/people-1m")
+      .map { line =>
+        val tokens = line.split(":")
+        Person(
+          tokens(0).toInt,         // id
+          tokens(1),               // first name
+          tokens(2),               // middle name
+          tokens(3),               // last name
+          tokens(4),               // gender
+          Date.valueOf(tokens(5)), // birth
+          tokens(6),               // ssn/uuid
+          tokens(7).toInt,         // salary
+        )
+      }
+      .cache()
 
   // map, flatMap, filter
-  def peopleAges(): DStream[(String, Int)] = readPeople().map { person =>
-    val age = Period.between(person.birthDate.toLocalDate, LocalDate.now()).getYears
-    (s"${person.firstName} ${person.lastName}", age)
-  }
+  def peopleAges: DStream[(String, Int)] =
+    readPeople.map { person =>
+      val age = Period.between(person.birthDate.toLocalDate, LocalDate.now()).getYears
+      (s"${person.firstName} ${person.lastName}", age)
+    }
 
-  def peopleSmallNames(): DStream[String] = readPeople().flatMap { person =>
-    List(person.firstName, person.middleName)
-  }
+  def peopleSmallNames: DStream[String] =
+    readPeople.flatMap { person =>
+      List(person.firstName, person.middleName)
+    }
 
-  def highIncomePeople() = readPeople().filter(_.salary > 80000)
+  def highIncomePeople: DStream[Person] =
+    readPeople.filter(_.salary > 80000)
 
   // count
-  def countPeople(): DStream[Long] = readPeople().count() // the number of entries in every batch
+  def countPeople: DStream[Long] =
+    readPeople.count() // the number of entries in every batch
 
   // count by value, PER BATCH
-  def countNames(): DStream[(String, Long)] = readPeople().map(_.firstName).countByValue()
+  def countNames: DStream[(String, Long)] =
+    readPeople
+      .map(_.firstName)
+      .countByValue()
 
   /*
    reduce by key
    - works on DStream of tuples
    - works PER BATCH
-  */
-  def countNamesReduce(): DStream[(String, Int)] =
-    readPeople()
+   */
+  def countNamesReduce: DStream[(String, Long)] =
+    readPeople
       .map(_.firstName)
-      .map(name => (name, 1))
-      .reduceByKey((a, b) => a + b)
-
+      // .map((_, 1L))
+      // .reduceByKey(_ + _)
+      .countByValue(4)
 
   // foreach rdd
-  def saveToJson() = readPeople().foreachRDD { rdd =>
-    val ds = spark.createDataset(rdd)
-    val f = new File("src/main/resources/data/people")
-    val nFiles = f.listFiles().length
-    val path = s"src/main/resources/data/people/people$nFiles.json"
+  def saveToJson() =
+    readPeople.foreachRDD { rdd =>
+      val path    = "src/main/resources/data/people-1m/"
+      val nFiles  = Files.list(Paths.get(path)).count()
+      val newFile = s"$path$nFiles.json"
 
-    ds.write.json(path)
-  }
-
+      spark.createDataset(rdd).write.json(newFile)
+    }
 
   def main(args: Array[String]): Unit = {
-//    val stream = countNamesReduce()
-//    stream.print()
-
+    peopleAges.print(10)
+    peopleSmallNames.print(10)
+    highIncomePeople.print(10)
+    countPeople.print(10)
+    countNames.print(10)
+    countNamesReduce.print(10)
     saveToJson()
 
     ssc.start()
