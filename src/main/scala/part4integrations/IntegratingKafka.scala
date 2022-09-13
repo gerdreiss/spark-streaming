@@ -1,8 +1,9 @@
 package part4integrations
 
-import org.apache.spark.sql.{ DataFrame, SparkSession }
-import org.apache.spark.sql.functions._
 import common._
+import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
 
 object IntegratingKafka {
 
