@@ -1,7 +1,6 @@
 package part4integrations
 
 import common._
-import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 
@@ -13,7 +12,7 @@ object IntegratingKafka {
     .master("local[2]")
     .getOrCreate()
 
-  def readFromKafka() =
+  def readFromKafka(): Unit =
     // https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html
     spark.readStream
       .format("kafka")
@@ -27,9 +26,9 @@ object IntegratingKafka {
       .start()
       .awaitTermination()
 
-  def writeToKafka() =
+  def writeToKafka(): Unit =
     spark.readStream
-      .schema(carsSchema)
+      .schema(Schemas.cars)
       .json("src/main/resources/data/cars")
       .selectExpr("upper(Name) as key", "Name as value")
       .writeStream
@@ -44,9 +43,9 @@ object IntegratingKafka {
     * Exercise: write the whole cars data structures to Kafka as JSON.
     * Use struct columns an the to_json function.
     */
-  def writeCarsToKafka() =
+  def writeCarsToKafka(): Unit =
     spark.readStream
-      .schema(carsSchema)
+      .schema(Schemas.cars)
       .json("src/main/resources/data/cars")
       .select(
         col("Name").as("key"),

@@ -1,6 +1,7 @@
 package part2structuredstreaming
 
-import common._
+import common.Models._
+import common.Schemas
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.Dataset
 import org.apache.spark.sql.Encoders
@@ -26,10 +27,10 @@ object StreamingDatasets {
       .format("socket")
       .option("host", "localhost")
       .option("port", 12345)
-      .load()                                                // DF with single string column "value"
-      .select(from_json(col("value"), carsSchema).as("car")) // composite column (struct)
-      .selectExpr("car.*")                                   // DF with multiple columns
-      .as[Car]                                               // encoder can be passed implicitly with spark.implicits
+      .load()                                                  // DF with single string column "value"
+      .select(from_json(col("value"), Schemas.cars).as("car")) // composite column (struct)
+      .selectExpr("car.*")                                     // DF with multiple columns
+      .as[Car]                                                 // encoder can be passed implicitly with spark.implicits
   }
 
   def showCarNames() = {

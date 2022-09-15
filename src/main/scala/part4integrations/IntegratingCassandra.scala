@@ -1,14 +1,19 @@
 package part4integrations
 
 import com.datastax.spark.connector.cql.CassandraConnector
-import org.apache.spark.sql.{Dataset, ForeachWriter, SaveMode, SparkSession}
-import org.apache.spark.sql.functions._
+import common.Models._
+import common.Schemas
+import org.apache.spark.sql.Dataset
+import org.apache.spark.sql.ForeachWriter
+import org.apache.spark.sql.SaveMode
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.cassandra._
-import common._
+import org.apache.spark.sql.functions._
 
 object IntegratingCassandra {
 
-  val spark = SparkSession.builder()
+  val spark = SparkSession
+    .builder()
     .appName("Integrating Cassandra")
     .master("local[2]")
     .config("spark.cassandra.connection.host", "127.0.0.1")
@@ -22,12 +27,11 @@ object IntegratingCassandra {
 
   def writeStreamToCassandraInBatches() = {
     val carsDS = spark.readStream
-      .schema(carsSchema)
+      .schema(Schemas.cars)
       .json("src/main/resources/data/cars")
       .as[Car]
 
-    carsDS
-      .writeStream
+    carsDS.writeStream
       .foreachBatch { (batch: Dataset[Car], _: Long) =>
         // save this batch to Cassandra in a single table write
         batch
@@ -51,8 +55,8 @@ object IntegratingCassandra {
           - call the close method either at the end of the chunk or with an error if it was thrown
      */
 
-    val keyspace = "public"
-    val table = "cars"
+    val keyspace  = "public"
+    val table     = "cars"
     val connector = CassandraConnector(spark.sparkContext.getConf)
 
     override def open(partitionId: Long, epochId: Long): Boolean = {
@@ -60,15 +64,13 @@ object IntegratingCassandra {
       true
     }
 
-    override def process(car: Car): Unit = {
+    override def process(car: Car): Unit =
       connector.withSessionDo { session =>
-        session.execute(
-          s"""
+        session.execute(s"""
              |insert into $keyspace.$table("Name", "Horsepower")
              |values ('${car.Name}', ${car.Horsepower.orNull})
            """.stripMargin)
       }
-    }
 
     override def close(errorOrNull: Throwable): Unit = println("Closing connection")
 
@@ -76,19 +78,16 @@ object IntegratingCassandra {
 
   def writeStreamToCassandra() = {
     val carsDS = spark.readStream
-      .schema(carsSchema)
+      .schema(Schemas.cars)
       .json("src/main/resources/data/cars")
       .as[Car]
 
-    carsDS
-      .writeStream
+    carsDS.writeStream
       .foreach(new CarCassandraForeachWriter)
       .start()
       .awaitTermination()
   }
 
-
-  def main(args: Array[String]): Unit = {
+  def main(args: Array[String]): Unit =
     writeStreamToCassandra()
-  }
 }

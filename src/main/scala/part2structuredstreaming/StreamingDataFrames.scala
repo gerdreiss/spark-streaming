@@ -1,10 +1,12 @@
 package part2structuredstreaming
 
-import common._
 import common.ExtensionMethods._
-import org.apache.spark.sql.{ DataFrame, SparkSession }
+import common.Schemas
+import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.streaming.Trigger
+
 import scala.concurrent.duration._
 
 object StreamingDataFrames {
@@ -44,7 +46,7 @@ object StreamingDataFrames {
       .format("csv")
       .option("header", "false")
       .option("dateFormat", "MMM d yyyy")
-      .schema(stocksSchema)
+      .schema(Schemas.stocks)
       .load("src/main/resources/data/stocks")
       .writeStream
       .format("console")

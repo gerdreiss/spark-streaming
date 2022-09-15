@@ -1,17 +1,17 @@
 package part3lowlevel
 
-import common._
+import common.Models._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.streaming.Seconds
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.dstream.DStream
 
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.sql.Date
 import java.time.LocalDate
 import java.time.Period
-import java.nio.file.Files
-import java.nio.file.Paths
 
 object DStreamsTransformations {
 

@@ -1,25 +1,28 @@
 package part4integrations
 
-import org.apache.spark.sql.{Dataset, SparkSession}
-import common._
+import common.Models._
+import common.Schemas
+import org.apache.spark.sql.Dataset
+import org.apache.spark.sql.SparkSession
 
 object IntegratingJDBC {
 
-  val spark = SparkSession.builder()
+  val spark = SparkSession
+    .builder()
     .appName("Integrating JDBC")
     .master("local[2]")
     .getOrCreate()
 
-  val driver = "org.postgresql.Driver"
-  val url = "jdbc:postgresql://localhost:5432/rtjvm"
-  val user = "docker"
+  val driver   = "org.postgresql.Driver"
+  val url      = "jdbc:postgresql://localhost:5432/rtjvm"
+  val user     = "docker"
   val password = "docker"
 
   import spark.implicits._
 
   def writeStreamToPostgres() = {
     val carsDF = spark.readStream
-      .schema(carsSchema)
+      .schema(Schemas.cars)
       .json("src/main/resources/data/cars")
 
     val carsDS = carsDF.as[Car]
@@ -43,7 +46,6 @@ object IntegratingJDBC {
 
   }
 
-  def main(args: Array[String]): Unit = {
+  def main(args: Array[String]): Unit =
     writeStreamToPostgres()
-  }
 }

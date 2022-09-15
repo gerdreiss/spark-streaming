@@ -1,6 +1,6 @@
 package part3lowlevel
 
-import common._
+import common.Models._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.streaming.Seconds
 import org.apache.spark.streaming.StreamingContext

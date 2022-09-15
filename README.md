@@ -1,4 +1,4 @@
-# The official repository for the Rock the JVM Spark Streaming with Scala course
+# The clone of the official repository for the Rock the JVM Spark Streaming with Scala course
 
 This repository contains the code we wrote during  [Rock the JVM's Spark Streaming with Scala](https://rockthejvm.com/course/spark-streaming). Unless explicitly mentioned, the code in this repository is exactly what was caught on camera.
 

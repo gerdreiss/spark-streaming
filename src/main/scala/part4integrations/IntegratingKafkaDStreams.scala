@@ -1,5 +1,6 @@
 package part4integrations
 
+import common.ExtensionMethods._
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.StringDeserializer
@@ -11,7 +12,6 @@ import org.apache.spark.streaming.kafka010.ConsumerStrategies
 import org.apache.spark.streaming.kafka010.KafkaUtils
 import org.apache.spark.streaming.kafka010.LocationStrategies
 
-import java.util
 import scala.util.Using
 
 object IntegratingKafkaDStreams {
@@ -36,7 +36,7 @@ object IntegratingKafkaDStreams {
 
   val kafkaTopic = "rockthejvm"
 
-  def readFromKafka() = {
+  def readFromKafka(): Unit = {
     KafkaUtils
       .createDirectStream(
         ssc,
@@ -61,9 +61,9 @@ object IntegratingKafkaDStreams {
     ssc.awaitTermination()
   }
 
-  def writeToKafka() = {
+  def writeToKafka(): Unit = {
     ssc
-      .socketTextStream("localhost", 12345)
+      .textFileStream("src/main/resources/data/lipsum")
       // transform data
       .map(_.toUpperCase())
       .foreachRDD {
@@ -71,15 +71,7 @@ object IntegratingKafkaDStreams {
           // inside this lambda, the code is run by a single executor
           // producer can insert records into the Kafka topics
           // available on this executor
-          Using {
-            new KafkaProducer[String, String](
-              kafkaParams
-                .foldLeft(new util.HashMap[String, Object]()) { (acc, pair) =>
-                  acc.put(pair._1, pair._2)
-                  acc
-                }
-            )
-          } { producer =>
+          Using(new KafkaProducer[String, String](kafkaParams.toJavaHashmap)) { producer =>
             partition.foreach { record =>
               producer.send(new ProducerRecord[String, String](kafkaTopic, record))
             }
@@ -91,7 +83,8 @@ object IntegratingKafkaDStreams {
     ssc.awaitTermination()
   }
 
-  def main(args: Array[String]): Unit =
+  def main(args: Array[String]): Unit = {
     writeToKafka()
-
+    readFromKafka()
+  }
 }
