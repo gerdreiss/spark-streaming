@@ -25,13 +25,12 @@ object IntegratingCassandra {
 
   import spark.implicits._
 
-  def writeStreamToCassandraInBatches() = {
-    val carsDS = spark.readStream
+  def writeStreamToCassandraInBatches() =
+    spark.readStream
       .schema(Schemas.cars)
       .json("src/main/resources/data/cars")
       .as[Car]
-
-    carsDS.writeStream
+      .writeStream
       .foreachBatch { (batch: Dataset[Car], _: Long) =>
         // save this batch to Cassandra in a single table write
         batch
@@ -43,7 +42,6 @@ object IntegratingCassandra {
       }
       .start()
       .awaitTermination()
-  }
 
   class CarCassandraForeachWriter extends ForeachWriter[Car] {
 
@@ -60,34 +58,34 @@ object IntegratingCassandra {
     val connector = CassandraConnector(spark.sparkContext.getConf)
 
     override def open(partitionId: Long, epochId: Long): Boolean = {
-      println("Open connection")
+      println("Open connection to Cassandra")
       true
     }
 
     override def process(car: Car): Unit =
-      connector.withSessionDo { session =>
-        session.execute(s"""
+      connector.withSessionDo {
+        _.execute(s"""
              |insert into $keyspace.$table("Name", "Horsepower")
              |values ('${car.Name}', ${car.Horsepower.orNull})
            """.stripMargin)
       }
 
-    override def close(errorOrNull: Throwable): Unit = println("Closing connection")
+    override def close(errorOrNull: Throwable): Unit =
+      println("Closing connection to Cassandra")
 
   }
 
-  def writeStreamToCassandra() = {
-    val carsDS = spark.readStream
+  def writeStreamToCassandra() =
+    spark.readStream
       .schema(Schemas.cars)
       .json("src/main/resources/data/cars")
       .as[Car]
-
-    carsDS.writeStream
+      .writeStream
       .foreach(new CarCassandraForeachWriter)
       .start()
       .awaitTermination()
-  }
 
   def main(args: Array[String]): Unit =
     writeStreamToCassandra()
+
 }
