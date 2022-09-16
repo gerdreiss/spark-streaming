@@ -1,5 +1,6 @@
 package part4integrations
 
+import common.ExtensionMethods._
 import common.Models._
 import common.Schemas
 import org.apache.spark.sql.Dataset
@@ -20,32 +21,39 @@ object IntegratingJDBC {
 
   import spark.implicits._
 
-  def writeStreamToPostgres() = {
-    val carsDF = spark.readStream
+  def writeStreamToPostgres() =
+    spark.readStream
       .schema(Schemas.cars)
       .json("src/main/resources/data/cars")
-
-    val carsDS = carsDF.as[Car]
-
-    carsDS.writeStream
+      .as[Car]
+      .writeStream
       .foreachBatch { (batch: Dataset[Car], _: Long) =>
         // each executor can control the batch
         // batch is a STATIC Dataset/DataFrame
 
-        batch.write
-          .format("jdbc")
-          .option("driver", driver)
-          .option("url", url)
-          .option("user", user)
-          .option("password", password)
-          .option("dbtable", "public.cars")
-          .save()
+        // batch.write
+        //   .format("jdbc")
+        //   .option("driver", driver)
+        //   .option("url", url)
+        //   .option("user", user)
+        //   .option("password", password)
+        //   .option("dbtable", "public.cars")
+        //   .save()
+
+        batch.write.jdbc(
+          url,
+          "public.cars",
+          Map(
+            "driver"   -> driver,
+            "user"     -> user,
+            "password" -> password,
+          ).toJavaProperties,
+        )
       }
       .start()
       .awaitTermination()
 
-  }
-
   def main(args: Array[String]): Unit =
     writeStreamToPostgres()
+
 }

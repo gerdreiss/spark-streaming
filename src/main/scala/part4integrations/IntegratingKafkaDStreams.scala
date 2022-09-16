@@ -71,7 +71,7 @@ object IntegratingKafkaDStreams {
           // inside this lambda, the code is run by a single executor
           // producer can insert records into the Kafka topics
           // available on this executor
-          Using(new KafkaProducer[String, String](kafkaParams.toJavaHashmap)) { producer =>
+          Using(new KafkaProducer[String, String](kafkaParams.toJavaHashMap)) { producer =>
             partition.foreach { record =>
               producer.send(new ProducerRecord[String, String](kafkaTopic, record))
             }
@@ -83,8 +83,6 @@ object IntegratingKafkaDStreams {
     ssc.awaitTermination()
   }
 
-  def main(args: Array[String]): Unit = {
+  def main(args: Array[String]): Unit =
     writeToKafka()
-    readFromKafka()
-  }
 }
