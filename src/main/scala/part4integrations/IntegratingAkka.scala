@@ -29,17 +29,18 @@ object IntegratingAkka {
   import spark.implicits._
 
   def writeCarsToAkka(): Unit = {
-    val carsDS = spark.readStream
+    val akkaConfig = ConfigFactory.load("akkaconfig/remoteActors")
+
+    spark.readStream
       .schema(Schemas.cars)
       .json("src/main/resources/data/cars")
       .as[Car]
-
-    carsDS.writeStream
+      .writeStream
       .foreachBatch { (batch: Dataset[Car], batchId: Long) =>
         batch.foreachPartition { cars: Iterator[Car] =>
           // this code is run by a single executor
 
-          val system     = ActorSystem(s"SourceSystem$batchId", ConfigFactory.load("akkaconfig/remoteActors"))
+          val system     = ActorSystem(s"SourceSystem$batchId", akkaConfig)
           val entryPoint = system.actorSelection("akka://ReceiverSystem@localhost:2552/user/entrypoint")
 
           // send all the data
@@ -55,8 +56,9 @@ object IntegratingAkka {
 }
 
 object ReceiverSystem {
-  implicit val actorSystem       =
-    ActorSystem("ReceiverSystem", ConfigFactory.load("akkaconfig/remoteActors").getConfig("remoteSystem"))
+  private val akkaConfig = ConfigFactory.load("akkaconfig/remoteActors")
+
+  implicit val actorSystem       = ActorSystem("ReceiverSystem", akkaConfig.getConfig("remoteSystem"))
   implicit val actorMaterializer = ActorMaterializer()
 
   class Destination extends Actor with ActorLogging {
@@ -65,15 +67,15 @@ object ReceiverSystem {
     }
   }
 
-  object EntryPoint {
-    def props(destination: ActorRef) = Props(new EntryPoint(destination))
-  }
-
   class EntryPoint(destination: ActorRef) extends Actor with ActorLogging {
     override def receive = { case m =>
       log.info(s"Received $m")
       destination ! m
     }
+  }
+
+  object EntryPoint {
+    def props(destination: ActorRef) = Props(new EntryPoint(destination))
   }
 
   def main(args: Array[String]): Unit = {
