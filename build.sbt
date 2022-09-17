@@ -2,7 +2,7 @@ name := "spark-streaming"
 
 version := "0.1"
 
-scalaVersion := "2.12.16"
+scalaVersion := "2.12.17"
 
 val sparkVersion              = "3.3.0"
 val postgresVersion           = "42.5.0"
