@@ -11,7 +11,6 @@ import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.kafka010.ConsumerStrategies
 import org.apache.spark.streaming.kafka010.KafkaUtils
 import org.apache.spark.streaming.kafka010.LocationStrategies
-
 import scala.util.Using
 
 object IntegratingKafkaDStreams {

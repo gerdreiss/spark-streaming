@@ -1,15 +1,18 @@
 package part7science
 
-import java.util.Properties
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{ ContentTypes, HttpEntity, StatusCodes }
-import akka.stream.ActorMaterializer
+import akka.http.scaladsl.model.ContentTypes
+import akka.http.scaladsl.model.HttpEntity
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
-import org.apache.kafka.clients.producer.{ KafkaProducer, ProducerConfig, ProducerRecord }
-import org.apache.kafka.common.serialization.{ LongSerializer, StringSerializer }
-
+import akka.stream.ActorMaterializer
+import java.util.Properties
+import org.apache.kafka.clients.producer.KafkaProducer
+import org.apache.kafka.clients.producer.ProducerConfig
+import org.apache.kafka.clients.producer.ProducerRecord
+import org.apache.kafka.common.serialization.LongSerializer
+import org.apache.kafka.common.serialization.StringSerializer
 import scala.io.Source
 
 object ScienceServer {

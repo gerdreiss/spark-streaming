@@ -1,7 +1,10 @@
 package part2structuredstreaming
 
-import org.apache.spark.sql.{ Column, DataFrame, SparkSession }
+import org.apache.spark.sql.Column
+import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.streaming.OutputMode
 import org.apache.spark.sql.types._
 
 object StreamingAggregations {
@@ -23,7 +26,7 @@ object StreamingAggregations {
       .selectExpr("count(*) as lineCount")
       .writeStream
       .format("console")
-      .outputMode("complete") // append and update not supported on aggregations without watermark
+      .outputMode(OutputMode.Complete()) // append and update not supported on aggregations without watermark
       .start()
       .awaitTermination()
 
@@ -38,7 +41,7 @@ object StreamingAggregations {
       .select(aggFunction(col("number")).as("agg_so_far"))
       .writeStream
       .format("console")
-      .outputMode("complete")
+      .outputMode(OutputMode.Complete())
       .start()
       .awaitTermination()
 
@@ -54,7 +57,7 @@ object StreamingAggregations {
       .count()
       .writeStream
       .format("console")
-      .outputMode("complete")
+      .outputMode(OutputMode.Complete())
       .start()
       .awaitTermination()
 

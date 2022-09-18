@@ -2,6 +2,7 @@ package part2structuredstreaming
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.streaming.OutputMode
 
 object StreamingJoins {
 
@@ -55,7 +56,7 @@ object StreamingJoins {
 
     streamedBandsGuitaristsDF.writeStream
       .format("console")
-      .outputMode("append")
+      .outputMode(OutputMode.Append())
       .start()
       .awaitTermination()
   }
@@ -100,7 +101,7 @@ object StreamingJoins {
 
     streamedBandsAndGuitaristsDF.writeStream
       .format("console")
-      .outputMode("append") // only append supported for stream vs stream join
+      .outputMode(OutputMode.Append()) // only append supported for stream vs stream join
       .start()
       .awaitTermination()
   }

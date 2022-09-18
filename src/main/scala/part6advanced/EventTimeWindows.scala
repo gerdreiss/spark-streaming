@@ -1,72 +1,63 @@
 package part6advanced
 
+import common.Schemas
+import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.types._
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.streaming.OutputMode
+import org.apache.spark.sql.types._
 
 object EventTimeWindows {
 
-  val spark = SparkSession.builder()
+  val spark = SparkSession
+    .builder()
     .appName("Event Time Windows")
     .master("local[2]")
     .getOrCreate()
 
-  val onlinePurchaseSchema = StructType(Array(
-    StructField("id", StringType),
-    StructField("time", TimestampType),
-    StructField("item", StringType),
-    StructField("quantity", IntegerType)
-  ))
+  def readPurchasesFromSocket(): DataFrame =
+    spark.readStream
+      .format("socket")
+      .option("host", "localhost")
+      .option("port", 12345)
+      .load()
+      .select(from_json(col("value"), Schemas.onlinePurchase).as("purchase"))
+      .selectExpr("purchase.*")
 
-  def readPurchasesFromSocket() = spark.readStream
-    .format("socket")
-    .option("host", "localhost")
-    .option("port", 12345)
-    .load()
-    .select(from_json(col("value"), onlinePurchaseSchema).as("purchase"))
-    .selectExpr("purchase.*")
+  def readPurchasesFromFile(): DataFrame =
+    spark.readStream
+      .schema(Schemas.onlinePurchase)
+      .json("src/main/resources/data/purchases")
 
-  def readPurchasesFromFile() = spark.readStream
-    .schema(onlinePurchaseSchema)
-    .json("src/main/resources/data/purchases")
-
-  def aggregatePurchasesByTumblingWindow() = {
-    val purchasesDF = readPurchasesFromSocket()
-
-    val windowByDay = purchasesDF
+  def aggregatePurchasesByTumblingWindow(): Unit =
+    readPurchasesFromSocket()
       .groupBy(window(col("time"), "1 day").as("time")) // tumbling window: sliding duration == window duration
       .agg(sum("quantity").as("totalQuantity"))
       .select(
         col("time").getField("start").as("start"),
         col("time").getField("end").as("end"),
-        col("totalQuantity")
+        col("totalQuantity"),
       )
-
-    windowByDay.writeStream
+      .writeStream
       .format("console")
-      .outputMode("complete")
+      .outputMode(OutputMode.Complete())
       .start()
       .awaitTermination()
-  }
 
-  def aggregatePurchasesBySlidingWindow() = {
-    val purchasesDF = readPurchasesFromSocket()
-
-    val windowByDay = purchasesDF
+  def aggregatePurchasesBySlidingWindow(): Unit =
+    readPurchasesFromSocket()
       .groupBy(window(col("time"), "1 day", "1 hour").as("time")) // struct column: has fields {start, end}
       .agg(sum("quantity").as("totalQuantity"))
       .select(
         col("time").getField("start").as("start"),
         col("time").getField("end").as("end"),
-        col("totalQuantity")
+        col("totalQuantity"),
       )
-
-    windowByDay.writeStream
+      .writeStream
       .format("console")
-      .outputMode("complete")
+      .outputMode(OutputMode.Complete())
       .start()
       .awaitTermination()
-  }
 
   /**
     * Exercises
@@ -74,53 +65,44 @@ object EventTimeWindows {
     * 2) Show the best selling product of every 24 hours, updated every hour.
     */
 
-  def bestSellingProductPerDay() = {
-    val purchasesDF = readPurchasesFromFile()
-
-    val bestSelling = purchasesDF
+  def bestSellingProductPerDay() =
+    readPurchasesFromFile()
       .groupBy(col("item"), window(col("time"), "1 day").as("day"))
       .agg(sum("quantity").as("totalQuantity"))
       .select(
         col("day").getField("start").as("start"),
         col("day").getField("end").as("end"),
         col("item"),
-        col("totalQuantity")
+        col("totalQuantity"),
       )
       .orderBy(col("day"), col("totalQuantity").desc)
-
-    bestSelling.writeStream
+      .writeStream
       .format("console")
-      .outputMode("complete")
+      .outputMode(OutputMode.Complete())
       .start()
       .awaitTermination()
-  }
 
-  def bestSellingProductEvery24h() = {
-    val purchasesDF = readPurchasesFromFile()
-
-    val bestSelling = purchasesDF
+  def bestSellingProductEvery24h() =
+    readPurchasesFromFile()
       .groupBy(col("item"), window(col("time"), "1 day", "1 hour").as("time"))
       .agg(sum("quantity").as("totalQuantity"))
       .select(
         col("time").getField("start").as("start"),
         col("time").getField("end").as("end"),
         col("item"),
-        col("totalQuantity")
+        col("totalQuantity"),
       )
-      .orderBy(col("start"), col("totalQuantity").desc)
-
-    bestSelling.writeStream
+      .orderBy(col("start").desc, col("totalQuantity").desc)
+      .writeStream
       .format("console")
-      .outputMode("complete")
+      .outputMode(OutputMode.Complete())
       .start()
-      .awaitTermination()
-  }
+      .awaitTermination(16000)
 
   /*
     For window functions, windows start at Jan 1 1970, 12 AM GMT
    */
 
-  def main(args: Array[String]): Unit = {
+  def main(args: Array[String]): Unit =
     bestSellingProductEvery24h()
-  }
 }

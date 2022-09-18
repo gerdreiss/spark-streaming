@@ -3,6 +3,7 @@ package common
 import org.apache.spark.sql.types._
 
 object Schemas {
+
   val cars: StructType = StructType(
     Array(
       StructField("Name", StringType),
@@ -22,6 +23,15 @@ object Schemas {
       StructField("company", StringType),
       StructField("date", DateType),
       StructField("value", DoubleType),
+    )
+  )
+
+  val onlinePurchase = StructType(
+    Array(
+      StructField("id", StringType),
+      StructField("time", TimestampType),
+      StructField("item", StringType),
+      StructField("quantity", IntegerType),
     )
   )
 }

@@ -1,11 +1,15 @@
 package part7science
 
-import org.apache.spark.sql.streaming.{GroupState, GroupStateTimeout, OutputMode}
-import org.apache.spark.sql.{Dataset, SparkSession}
+import org.apache.spark.sql.Dataset
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.streaming.GroupState
+import org.apache.spark.sql.streaming.GroupStateTimeout
+import org.apache.spark.sql.streaming.OutputMode
 
 object ScienceSparkAggregator {
 
-  val spark = SparkSession.builder()
+  val spark = SparkSession
+    .builder()
     .appName("The Science project")
     .master("local[2]")
     .getOrCreate()
@@ -23,9 +27,9 @@ object ScienceSparkAggregator {
     .select("value")
     .as[String]
     .map { line =>
-      val tokens = line.split(",")
+      val tokens    = line.split(",")
       val sessionId = tokens(0)
-      val time = tokens(1).toLong
+      val time      = tokens(1).toLong
 
       UserResponse(sessionId, time)
     }
@@ -66,19 +70,20 @@ object ScienceSparkAggregator {
     61159462-0bb4-42b1-aa4b-ac242b3444a0,486
 
     window 4 = [542, 720, 768] = 676.6
-  */
+   */
 
-  def updateUserResponseTime
-    (n: Int)
-    (sessionId: String, group: Iterator[UserResponse], state: GroupState[List[UserResponse]])
-  : Iterator[UserAvgResponse] = {
+  def updateUserResponseTime(n: Int)(
+      sessionId: String,
+      group: Iterator[UserResponse],
+      state: GroupState[List[UserResponse]],
+  ): Iterator[UserAvgResponse] =
     group.flatMap { record =>
       val lastWindow =
         if (state.exists) state.get
         else List()
 
       val windowLength = lastWindow.length
-      val newWindow =
+      val newWindow    =
         if (windowLength >= n) lastWindow.tail :+ record
         else lastWindow :+ record
 
@@ -92,29 +97,24 @@ object ScienceSparkAggregator {
         Iterator()
       }
     }
-  }
 
-  def getAverageResponseTime(n: Int) = {
+  def getAverageResponseTime(n: Int) =
     readUserResponses()
       .groupByKey(_.sessionId)
       .flatMapGroupsWithState(OutputMode.Append, GroupStateTimeout.NoTimeout())(updateUserResponseTime(n))
       .writeStream
       .format("console")
-      .outputMode("append")
+      .outputMode(OutputMode.Append())
       .start()
       .awaitTermination()
-  }
 
-
-  def logUserResponses() = {
+  def logUserResponses() =
     readUserResponses().writeStream
       .format("console")
-      .outputMode("append")
+      .outputMode(OutputMode.Append())
       .start()
       .awaitTermination()
-  }
 
-  def main(args: Array[String]): Unit = {
+  def main(args: Array[String]): Unit =
     getAverageResponseTime(3)
-  }
 }

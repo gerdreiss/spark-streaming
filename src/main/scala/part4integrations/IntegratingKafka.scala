@@ -3,6 +3,7 @@ package part4integrations
 import common._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.streaming.OutputMode
 
 object IntegratingKafka {
 
@@ -22,7 +23,7 @@ object IntegratingKafka {
       .select(col("topic"), expr("cast(value as string) as actualValue"))
       .writeStream
       .format("console")
-      .outputMode("append")
+      .outputMode(OutputMode.Append())
       .start()
       .awaitTermination()
 

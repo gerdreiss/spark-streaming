@@ -7,6 +7,7 @@ import org.apache.spark.sql.Dataset
 import org.apache.spark.sql.Encoders
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.streaming.OutputMode
 
 object StreamingDatasets {
 
@@ -44,7 +45,7 @@ object StreamingDatasets {
 
     carNamesAlt.writeStream
       .format("console")
-      .outputMode("append")
+      .outputMode(OutputMode.Append())
       .start()
       .awaitTermination()
   }
@@ -63,7 +64,7 @@ object StreamingDatasets {
       .filter(_.Horsepower.getOrElse(0L) > 140)
       .writeStream
       .format("console")
-      .outputMode("append")
+      .outputMode(OutputMode.Append())
       .start()
       .awaitTermination()
 
@@ -72,7 +73,7 @@ object StreamingDatasets {
       .select(avg(col("Horsepower")))
       .writeStream
       .format("console")
-      .outputMode("complete")
+      .outputMode(OutputMode.Complete())
       .start()
       .awaitTermination()
 
@@ -84,7 +85,7 @@ object StreamingDatasets {
 
     carCountByOriginAlt.writeStream
       .format("console")
-      .outputMode("complete")
+      .outputMode(OutputMode.Complete())
       .start()
       .awaitTermination()
   }

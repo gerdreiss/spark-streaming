@@ -5,8 +5,8 @@ import common.Schemas
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.streaming.OutputMode
 import org.apache.spark.sql.streaming.Trigger
-
 import scala.concurrent.duration._
 
 object StreamingDataFrames {
@@ -34,7 +34,7 @@ object StreamingDataFrames {
     // consuming a DF
     val query = shortLines.writeStream
       .format("console")
-      .outputMode("append")
+      .outputMode(OutputMode.Append())
       .start()
 
     // wait for the stream to finish
@@ -50,7 +50,7 @@ object StreamingDataFrames {
       .load("src/main/resources/data/stocks")
       .writeStream
       .format("console")
-      .outputMode("append")
+      .outputMode(OutputMode.Append())
       .start()
       .awaitTermination()
 
@@ -62,7 +62,7 @@ object StreamingDataFrames {
       .load()
       .writeStream
       .format("console")
-      .outputMode("append")
+      .outputMode(OutputMode.Append())
       // write the lines DF at a certain trigger
       .trigger(
         // Trigger.ProcessingTime(2.seconds) // every 2 seconds run the query
