@@ -22,16 +22,17 @@ object StatefulComputations {
   case class AveragePostStorage(postType: String, averageStorage: Double)
 
   // postType,count,storageUsed
-  def readSocialUpdates() = spark.readStream
-    .format("socket")
-    .option("host", "localhost")
-    .option("port", 12345)
-    .load()
-    .as[String]
-    .map { line =>
-      val tokens = line.split(",")
-      SocialPostRecord(tokens(0), tokens(1).toInt, tokens(2).toInt)
-    }
+  def readSocialUpdates() =
+    spark.readStream
+      .format("socket")
+      .option("host", "localhost")
+      .option("port", 12345)
+      .load()
+      .as[String]
+      .map { line =>
+        val tokens = line.split(",")
+        SocialPostRecord(tokens(0), tokens(1).toInt, tokens(2).toInt)
+      }
 
   def updateAverageStorage(
       postType: String,                  // the key by which the grouping was made
@@ -55,14 +56,14 @@ object StatefulComputations {
       else SocialPostBulk(postType, 0, 0)
 
     // iterate through the group
-    val totalAggregatedData: (Int, Int) = group.foldLeft((0, 0)) { (currentData, record) =>
-      val (currentCount, currentStorage) = currentData
-      (currentCount + record.count, currentStorage + record.storageUsed)
-    }
+    val (totalCount, totalStorage): (Int, Int) =
+      group.foldLeft((0, 0)) { case ((currentCount, currentStorage), record) =>
+        (currentCount + record.count, currentStorage + record.storageUsed)
+      }
 
     // update the state with new aggregated data
-    val (totalCount, totalStorage) = totalAggregatedData
-    val newPostBulk                =
+    // val (totalCount, totalStorage) = totalAggregatedData
+    val newPostBulk =
       SocialPostBulk(postType, previousBulk.count + totalCount, previousBulk.totalStorageUsed + totalStorage)
     state.update(newPostBulk)
 
@@ -73,16 +74,16 @@ object StatefulComputations {
   def getAveragePostStorage() = {
     val socialStream = readSocialUpdates()
 
-    val regularSqlAverageByPostType = socialStream
-      .groupByKey(_.postType)
-      .agg(sum(col("count")).as("totalCount").as[Int], sum(col("storageUsed")).as("totalStorage").as[Int])
-      .selectExpr("key as postType", "totalStorage/totalCount as avgStorage")
+    val regularSqlAverageByPostType =
+      socialStream
+        .groupByKey(_.postType)
+        .agg(sum(col("count")).as("totalCount").as[Int], sum(col("storageUsed")).as("totalStorage").as[Int])
+        .selectExpr("key as postType", "totalStorage/totalCount as avgStorage")
 
-    val averageByPostType = socialStream
+    socialStream
       .groupByKey(_.postType)
       .mapGroupsWithState(GroupStateTimeout.NoTimeout())(updateAverageStorage)
-
-    averageByPostType.writeStream
+      .writeStream
       .outputMode(OutputMode.Update()) // append not supported on mapGroupsWithState
       .foreachBatch { (batch: Dataset[AveragePostStorage], _: Long) =>
         batch.show()
