@@ -1,8 +1,13 @@
-name := "spark-streaming"
+name              := "spark-streaming"
+version           := "0.1"
+scalaVersion      := "2.12.17"
+semanticdbEnabled := true
 
-version := "0.1"
-
-scalaVersion := "2.12.17"
+resolvers ++= Seq(
+  "bintray-spark-packages" at "https://dl.bintray.com/spark-packages/maven",
+  "Typesafe Simple Repository" at "https://repo.typesafe.com/typesafe/simple/maven-releases",
+  "MavenRepository" at "https://mvnrepository.com",
+)
 
 val sparkVersion              = "3.3.0"
 val postgresVersion           = "42.5.0"
@@ -13,12 +18,6 @@ val twitter4jVersion          = "4.0.7"
 val kafkaVersion              = "2.8.1"
 val log4jVersion              = "2.19.0"
 val nlpLibVersion             = "3.5.1"
-
-resolvers ++= Seq(
-  "bintray-spark-packages" at "https://dl.bintray.com/spark-packages/maven",
-  "Typesafe Simple Repository" at "https://repo.typesafe.com/typesafe/simple/maven-releases",
-  "MavenRepository" at "https://mvnrepository.com",
-)
 
 /*
   Beware that if you're working on this repository from a work computer,
