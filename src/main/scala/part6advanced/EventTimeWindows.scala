@@ -30,7 +30,7 @@ object EventTimeWindows {
       .json("src/main/resources/data/purchases")
 
   def aggregatePurchasesByTumblingWindow(): Unit =
-    readPurchasesFromSocket()
+    readPurchasesFromFile()
       .groupBy(window(col("time"), "1 day").as("time")) // tumbling window: sliding duration == window duration
       .agg(sum("quantity").as("totalQuantity"))
       .select(
@@ -42,10 +42,10 @@ object EventTimeWindows {
       .format("console")
       .outputMode(OutputMode.Complete())
       .start()
-      .awaitTermination()
+      .awaitTermination(16000)
 
   def aggregatePurchasesBySlidingWindow(): Unit =
-    readPurchasesFromSocket()
+    readPurchasesFromFile()
       .groupBy(window(col("time"), "1 day", "1 hour").as("time")) // struct column: has fields {start, end}
       .agg(sum("quantity").as("totalQuantity"))
       .select(
@@ -57,7 +57,7 @@ object EventTimeWindows {
       .format("console")
       .outputMode(OutputMode.Complete())
       .start()
-      .awaitTermination()
+      .awaitTermination(16000)
 
   /**
     * Exercises
@@ -80,7 +80,7 @@ object EventTimeWindows {
       .format("console")
       .outputMode(OutputMode.Complete())
       .start()
-      .awaitTermination()
+      .awaitTermination(16000)
 
   def bestSellingProductEvery24h() =
     readPurchasesFromFile()
@@ -103,6 +103,11 @@ object EventTimeWindows {
     For window functions, windows start at Jan 1 1970, 12 AM GMT
    */
 
-  def main(args: Array[String]): Unit =
-    bestSellingProductEvery24h()
+  def main(args: Array[String]): Unit = {
+    aggregatePurchasesByTumblingWindow()
+    aggregatePurchasesBySlidingWindow()
+    bestSellingProductPerDay()
+    bestSellingProductPerDay()
+  }
+
 }

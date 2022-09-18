@@ -1,7 +1,11 @@
-name              := "spark-streaming"
-version           := "0.1"
-scalaVersion      := "2.12.17"
+name := "spark-streaming"
+
+version := "0.1"
+
+scalaVersion := "2.12.17"
+
 semanticdbEnabled := true
+semanticdbVersion := "4.5.13"
 
 resolvers ++= Seq(
   "bintray-spark-packages" at "https://dl.bintray.com/spark-packages/maven",
