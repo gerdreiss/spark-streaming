@@ -203,6 +203,7 @@ spark-warehouse/
 
 # For Metals
 .bloop/
+.bsp/
 .metals/
 .vscode/
 metals.sbt

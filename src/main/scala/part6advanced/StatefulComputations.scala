@@ -9,11 +9,12 @@ import org.apache.spark.sql.streaming.OutputMode
 
 object StatefulComputations {
 
-  val spark = SparkSession
-    .builder()
-    .appName("Stateful Computation")
-    .master("local[2]")
-    .getOrCreate()
+  val spark: SparkSession =
+    SparkSession
+      .builder()
+      .appName("Stateful Computation")
+      .master("local[2]")
+      .getOrCreate()
 
   import spark.implicits._
 
@@ -22,7 +23,7 @@ object StatefulComputations {
   case class AveragePostStorage(postType: String, averageStorage: Double)
 
   // postType,count,storageUsed
-  def readSocialUpdates() =
+  def readSocialUpdates(): Dataset[SocialPostRecord] =
     spark.readStream
       .format("socket")
       .option("host", "localhost")
@@ -71,7 +72,7 @@ object StatefulComputations {
     AveragePostStorage(postType, newPostBulk.totalStorageUsed * 1.0 / newPostBulk.count)
   }
 
-  def getAveragePostStorage() = {
+  def getAveragePostStorage(): Unit = {
     val socialStream = readSocialUpdates()
 
     val regularSqlAverageByPostType =
