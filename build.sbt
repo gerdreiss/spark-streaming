@@ -2,7 +2,7 @@ name := "spark-streaming"
 
 version := "0.1"
 
-scalaVersion := "2.12.17"
+scalaVersion := "2.13.9"
 
 semanticdbEnabled := true
 semanticdbVersion := "4.5.13"
